@@ -14,8 +14,12 @@ import java.util.HashMap;
 import java.util.Vector;
 
 import main.java.memoranda.date.CalendarDate;
+import main.java.memoranda.interfaces.IEvent;
 import main.java.memoranda.util.CurrentStorage;
 import main.java.memoranda.util.Util;
+import main.java.memoranda.Year;
+import main.java.memoranda.Month;
+import main.java.memoranda.Day;
 
 import java.util.Map;
 import java.util.Collections;
@@ -88,7 +92,14 @@ public class EventsManager {
 	}
 
 	public static boolean isNREventsForDate(CalendarDate date) {
-		Day d = getDay(date);
+	    //TASK3-2 SMELL BETWEEN CLASSES
+	    // Editing existing code to work with new changes.
+	    //Day d = getDay(date);
+	    Day d = new Day();
+	        
+	    d = d.createDay(date);
+	    
+	    
 		if (d == null)
 			return false;
 		if (d.getElement().getChildElements("event").size() > 0)
@@ -98,7 +109,15 @@ public class EventsManager {
 
 	public static Collection getEventsForDate(CalendarDate date) {
 		Vector v = new Vector();
-		Day d = getDay(date);
+		//Day d = getDay(date);
+		
+		//TASK3-2 SMELL BETWEEN CLASSES
+		// Editing existing code to work with new changes.
+		
+		Day d = new Day();
+        
+        d = d.createDay(date);
+		
 		if (d != null) {
 			Elements els = d.getElement().getChildElements("event");
 			for (int i = 0; i < els.size(); i++)
@@ -112,7 +131,7 @@ public class EventsManager {
 		return v;
 	}
 
-	public static Event createEvent(
+	public static IEvent createEvent(
 		CalendarDate date,
 		int hh,
 		int mm,
@@ -122,14 +141,13 @@ public class EventsManager {
 		el.addAttribute(new Attribute("hour", String.valueOf(hh)));
 		el.addAttribute(new Attribute("min", String.valueOf(mm)));
 		el.appendChild(text);
-		Day d = getDay(date);
-		if (d == null)
-			d = createDay(date);
+		
+		Day d = new Day(el);
 		d.getElement().appendChild(el);
 		return new EventImpl(el);
 	}
 
-	public static Event createRepeatableEvent(
+	public static IEvent createRepeatableEvent(
 		int type,
 		CalendarDate startDate,
 		CalendarDate endDate,
@@ -174,7 +192,7 @@ public class EventsManager {
 		Vector reps = (Vector) getRepeatableEvents();
 		Vector v = new Vector();
 		for (int i = 0; i < reps.size(); i++) {
-			Event ev = (Event) reps.get(i);
+			IEvent ev = (IEvent) reps.get(i);
 			
 			// --- ivanrise
 			// ignore this event if it's a 'only working days' event and today is weekend.
@@ -224,8 +242,16 @@ public class EventsManager {
 		return getEventsForDate(CalendarDate.today());
 	}
 
-	public static Event getEvent(CalendarDate date, int hh, int mm) {
-		Day d = getDay(date);
+	public static IEvent getEvent(CalendarDate date, int hh, int mm) {
+		//Day d = getDay(date);
+		
+	    
+	    //TASK3-2 SMELL BETWEEN CLASSES
+	    // Editing existing code to work with new changes.
+		Day d = new Day();
+        
+        d = d.createDay(date);
+        
 		if (d == null)
 			return null;
 		Elements els = d.getElement().getChildElements("event");
@@ -241,16 +267,28 @@ public class EventsManager {
 	}
 
 	public static void removeEvent(CalendarDate date, int hh, int mm) {
-		Day d = getDay(date);
+	    
+	    
+	    //TASK3-2 SMELL BETWEEN CLASSES
+	    // Editing existing code to work with new changes. 
+	    Day d = new Day();
+	    
+		d = d.createDay(date);
 		if (d == null)
 			d.getElement().removeChild(getEvent(date, hh, mm).getContent());
 	}
 
-	public static void removeEvent(Event ev) {
+	public static void removeEvent(IEvent ev) {
 		ParentNode parent = ev.getContent().getParent();
 		parent.removeChild(ev.getContent());
 	}
 
+	
+	
+	//TASK3-2 SMELL BETWEEN CLASSES "Feature Envy"
+	// These methods would better suit being in the classes they relate to. Moved code over and made needed changes
+	
+	/*
 	private static Day createDay(CalendarDate date) {
 		Year y = getYear(date.getYear());
 		if (y == null)
@@ -290,6 +328,13 @@ public class EventsManager {
 			return null;
 		return m.getDay(date.getDay());
 	}
+	*/
+	
+	//TASK 3-2 SMELL WITHIN A CLASS "Long Class"
+	// These classes could be made into their own classes and not nested within the EventsManager.java class
+	// Created these new classes in the same package and moved code over (small changes needed to get code running again made as well)
+	
+	/*
 
 	static class Year {
 		Element yearElement = null;
@@ -407,7 +452,7 @@ public class EventsManager {
 
 		/*
 		 * public Note getNote() { return new NoteImpl(dEl);
-		 */
+		 
 
 		public Element getElement() {
 			return dEl;

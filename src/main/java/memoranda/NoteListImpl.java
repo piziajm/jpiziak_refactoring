@@ -12,6 +12,9 @@ import java.util.Vector;
 
 import main.java.memoranda.date.CalendarDate;
 import main.java.memoranda.date.CurrentDate;
+import main.java.memoranda.interfaces.INote;
+import main.java.memoranda.interfaces.INoteList;
+import main.java.memoranda.interfaces.IProject;
 import main.java.memoranda.util.Util;
 import nu.xom.Attribute;
 import nu.xom.Document;
@@ -21,9 +24,9 @@ import nu.xom.Elements;
  * 
  */
 /*$Id: NoteListImpl.java,v 1.14 2004/10/28 11:30:15 alexeya Exp $*/
-public class NoteListImpl implements NoteList {
+public class NoteListImpl implements INoteList {
 
-    private Project _project = null;
+    private IProject _project = null;
     private Document _doc = null;
     private Element _root = null;
 
@@ -32,13 +35,13 @@ public class NoteListImpl implements NoteList {
     /**
      * Constructor for NoteListImpl.
      */
-    public NoteListImpl(Document doc, Project prj) {
+    public NoteListImpl(Document doc, IProject prj) {
         _doc = doc;
         _root = _doc.getRootElement();
         _project = prj;
     }
 
-    public NoteListImpl(Project prj) {
+    public NoteListImpl(IProject prj) {
     	
         //_root = new Element("noteslist", NS_JNNL);
         _root = new Element("noteslist");
@@ -69,7 +72,7 @@ public class NoteListImpl implements NoteList {
     }
     
     /**
-     * @see main.java.memoranda.NoteList#getMarkedNotes()
+     * @see main.java.memoranda.interfaces.INoteList#getMarkedNotes()
      */
     public Collection getMarkedNotes() {
         Vector v = new Vector();
@@ -85,7 +88,7 @@ public class NoteListImpl implements NoteList {
 					Vector ns = d.getNotes();
 					for(int ni = 0; ni < ns.size(); ni++) {
 						NoteElement ne = (NoteElement) ns.get(ni);
-						Note n = new NoteImpl(ne.getElement(), _project);
+						INote n = new NoteImpl(ne.getElement(), _project);
 						if (n.isMarked()) v.add(n);
                 }
             }
@@ -94,8 +97,10 @@ public class NoteListImpl implements NoteList {
 	        return v;
 	}
 
+    // Task 1, Complexity, 3. Removed already tested if statements
     public Collection getNotesForPeriod(CalendarDate startDate, CalendarDate endDate) {
         Vector v = new Vector();
+        
         Elements yrs = _root.getChildElements("year");
         for (int yi = 0; yi < yrs.size(); yi++) {
             Year y = new Year(yrs.get(yi));
@@ -103,13 +108,13 @@ public class NoteListImpl implements NoteList {
                 Vector months = y.getMonths();
                 for (int mi = 0; mi < months.size(); mi++) {
                     Month m = (Month) months.get(mi);
-                    if (!((y.getValue() == startDate.getYear()) && (m.getValue() < startDate.getMonth()))
-                        || !((y.getValue() == endDate.getYear()) && (m.getValue() > endDate.getMonth()))) {
+                    if (!(((m.getValue() < startDate.getMonth()))
+                        || !(((m.getValue() > endDate.getMonth()))))) {
                         Vector days = m.getDays();
                         for (int di = 0; di < days.size(); di++) {
                             Day d = (Day) days.get(di);
-                            if (!((m.getValue() == startDate.getMonth()) && (d.getValue() < startDate.getDay()))
-							|| !((m.getValue() == endDate.getMonth()) && (d.getValue() > endDate.getDay()))) {
+                            if (!(( (d.getValue() < startDate.getDay()))
+							|| !(((d.getValue() > endDate.getDay()))))) {
 								Vector ns = d.getNotes();
 								for(int ni = 0; ni < ns.size(); ni++) {
 									NoteElement n = (NoteElement) ns.get(ni);
@@ -121,6 +126,7 @@ public class NoteListImpl implements NoteList {
                 }
             }
         }
+        
         return v;
     }
 
@@ -130,21 +136,21 @@ public class NoteListImpl implements NoteList {
 	 * @return Note
 	 */
 	 
-    public Note getNoteForDate(CalendarDate date) {
+    public INote getNoteForDate(CalendarDate date) {
         Day d = getDay(date);
         if (d == null)
             return null;
 		Vector ns = d.getNotes();
 		if(ns.size()>0) {
 			NoteElement n = (NoteElement) ns.get(0);
-			Note currentNote = new NoteImpl(n.getElement(), _project);
+			INote currentNote = new NoteImpl(n.getElement(), _project);
 			return currentNote; 
 		}
 		return null;
         //return new NoteImpl(d.getElement(), _project);
     }
 
-    public Note createNoteForDate(CalendarDate date) {
+    public INote createNoteForDate(CalendarDate date) {
         Year y = getYear(date.getYear());
         if (y == null)
             y = createYear(date.getYear());
@@ -179,7 +185,7 @@ public class NoteListImpl implements NoteList {
 //		CurrentNote.set(null);
     }
 	
-    public Note getActiveNote() {
+    public INote getActiveNote() {
         //return CurrentNote.get(); 
     	return getNoteForDate(CurrentDate.get());
     	// FIXED: Must return the first note for today [alexeya]
@@ -411,7 +417,7 @@ public class NoteListImpl implements NoteList {
 	}
 	
     /**
-     * @see main.java.memoranda.NoteList#getXMLContent()
+     * @see main.java.memoranda.interfaces.INoteList#getXMLContent()
      */
     public Document getXMLContent() {
         return _doc;
